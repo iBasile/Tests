@@ -1,0 +1,50 @@
+-- =========================
+-- QG Security Server
+-- =========================
+
+local SERVER_PROTOCOL = "qg_security"
+local REDSTONE_OUT = "back"
+
+peripheral.find("modem", rednet.open)
+local monitor = peripheral.find("monitor")
+monitor.setTextScale(0.5)
+
+local detectors = {}
+
+local function redraw()
+    monitor.clear()
+    monitor.setCursorPos(1,1)
+    monitor.write("=== SECURITE QG ===")
+
+    local y = 3
+    local globalAlert = false
+
+    for id, state in pairs(detectors) do
+        monitor.setCursorPos(2, y)
+
+        if state then
+            monitor.setTextColor(colors.red)
+            monitor.write("PC "..id.." : ALERTE")
+            globalAlert = true
+        else
+            monitor.setTextColor(colors.lime)
+            monitor.write("PC "..id.." : OK")
+        end
+
+        y = y + 1
+    end
+
+    monitor.setTextColor(colors.white)
+    redstone.setOutput(REDSTONE_OUT, globalAlert)
+end
+
+redraw()
+
+while true do
+    local _, msg = rednet.receive(SERVER_PROTOCOL)
+
+    if type(msg) == "table" and msg.id ~= nil then
+        detectors[msg.id] = msg.alert
+        redraw()
+    end
+end
